@@ -46,7 +46,6 @@ app.use(async (req, res, next) => {
 	next();
 });
 
-
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -74,38 +73,16 @@ app.get('/', async (req, res) => {
 		return res.send('Failed to get deals');
 	}
 });
-app.get('/deals/:id', async (req, res) => {
-	const randomBoolean = Math.random() >= 0.5;
-	const outcome = randomBoolean === true ? 'won' : 'lost';
 
-	try {
-		await api.updateDeal(req.params.id, outcome, req.user[0].access_token);
-
-		res.render('outcome', { outcome });
-	} catch (error) {
-		console.log(error);
-
-		return res.send('Failed to update the deal');
-	}
-});
-app.get('/job', async (req, res) => {
+app.get("/job", async (req, res) => {
 	if (req.user.length < 1) {
         return res.redirect("/auth/pipedrive");
     }
+
 	try {
-		res.render('newJob');
-	} catch (error) {
-		console.log(error);
-
-        return res.send("Failed to create job");
-	}
-});
-
-app.get("/job/:id", async (req, res) => {
-    try {
         const deal = await api.getDealById(
             req.user[0].access_token,
-            req.params.id
+            req.query.selectedIds
         );
 
         const dealCopy = { ...deal };
@@ -128,7 +105,6 @@ app.get("/job/:id", async (req, res) => {
         deal.data.person_id.primaryPhone = primaryPhone;
         deal.data.person_id.primaryEmail = primaryEmail;
 
-        // res.send(JSON.stringify(dealCopy.data));
 
         // address api key : 299e5885487b8b0ccf8dce38c4bbd9cd2c0f074d
         // job type api key : 6b19ddd5da6739b4eb6d5b8497382c6c22d0562f
@@ -219,9 +195,8 @@ app.get("/job/:id", async (req, res) => {
             deal: deal.data,
         });
     } catch (error) {
-        console.log(error);
 
-        return res.send("Failed to create job");
+        return res.send('Could not render Job form');
     }
 });
 
@@ -252,7 +227,6 @@ app.post("/newJob/:id", async (req, res) => {
             },
             req.user[0].access_token
 		);
-		console.log("updated person");
 		await api.updateDeal(
             req.params.id,
             {
@@ -267,7 +241,6 @@ app.post("/newJob/:id", async (req, res) => {
             },
             req.user[0].access_token
 		);
-		console.log("updated deal");
 		const reselectedDeal = await api.getDealById(
             req.user[0].access_token,
             req.params.id
